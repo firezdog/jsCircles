@@ -10,7 +10,7 @@
 	function Circle(cx, cy, html_id, click_length)
 	{
 		var html_id = html_id;
-		this.info = { cx: cx,  cy: cy };
+		this.info = { cx: cx,  cy: cy, html_id: html_id };
 		
 		//private function that generates a random number
 		var randomNumberBetween = function(min, max){
@@ -43,11 +43,11 @@
 			var svg = document.querySelector("svg");
 
 			//see if the circle is going outside the browser. if it is, reverse the velocity
-			if( this.info.cx >= svg.width.baseVal.value-this.info.r || this.info.cx <= this.info.r)
+			if( this.info.cx >= svg.width.baseVal.value || this.info.cx <= 0)
 			{
 				this.info.velocity.x = this.info.velocity.x * -1;
 			}
-			if( this.info.cy >= svg.height.baseVal.value-this.info.r || this.info.cy <= this.info.r)
+			if( this.info.cy >= svg.height.baseVal.value || this.info.cy <= 0)
 			{
 				this.info.velocity.y = this.info.velocity.y * -1;
 			}
@@ -57,6 +57,54 @@
 
 			el.setAttribute("cx", this.info.cx);
 			el.setAttribute("cy", this.info.cy);
+		}
+
+		this.checkCollision = function(circles) {
+			for (circle in circles) {
+				if (circles[circle] !== this) {
+					var x1 = this.info.cx;
+					var x2 = circles[circle].info.cx;
+					var y1 = this.info.cy; 
+					var y2 = circles[circle].info.cy;
+					radialAvg = (this.info.r + circles[circle].info.r)/2
+					circleDistance = Math.sqrt(Math.pow((x1-x2), 2) + Math.pow((y1-y2),2))
+					if (circleDistance < radialAvg*2) {
+						// Log collision...
+						// console.log("Collision!")
+
+						// Remove the circles
+						// document.getElementById(circles[circle].info.html_id).remove();
+						// circles.splice(circle,1);
+						// document.getElementById(this.info.html_id).remove();
+						// circles.splice(circles.indexOf(this),1);
+
+						// Non-animated merge...
+						// playground.createNewCircle(this.info.cx,this.info.cy,radialAvg*2*20);
+						// document.getElementById(circles[circle].info.html_id).remove();
+						// circles.splice(circle,1);
+						// document.getElementById(this.info.html_id).remove();
+						// circles.splice(circles.indexOf(this),1);
+
+						//Bounce
+						this.info.velocity.x *= -1;
+						this.info.velocity.y *= -1;	
+						this.update(1);
+						circles[circle].info.velocity.x *= -1;
+						circles[circle].info.velocity.y *= -1;
+						circles[circle].update(1);
+
+						// Change color...
+						// document.getElementById(this.info.html_id).style.cssText = "fill:green";
+						// document.getElementById(circles[circle].info.html_id).style.cssText = "fill:blue";
+
+						// //Stick
+						// this.info.velocity.x = (circles[circle].info.velocity.x+this.info.velocity.x)/2
+						// this.info.velocity.y = (circles[circle].info.velocity.y+this.info.velocity.y)/2
+						// circles[circle].info.velocity.x = this.info.velocity.x
+						// circles[circle].info.velocity.y = this.info.velocity.y
+					}
+				}
+			}
 		}
 
 		//creates the SVG element and returns it
@@ -85,6 +133,12 @@
 			}
 		}
 
+		this.collisionLoop = function() {
+			for(circle in circles) {
+				circles[circle].checkCollision(circles);
+			}
+		}
+
 		this.createNewCircle = function(x,y, click_length){
 			var new_circle = new Circle(x,y,counter++, click_length);
 			circles.push(new_circle);
@@ -92,11 +146,12 @@
 		}
 
 		//create one circle when the game starts
-		this.createNewCircle(document.body.clientWidth/2, document.body.clientHeight/2);
+		this.createNewCircle(document.body.clientWidth/2, document.body.clientHeight/2, 200);
 	}
 
 	var playground = new PlayGround();
 	setInterval(playground.loop, 15);
+	setInterval(playground.collisionLoop, 1);
 			
 	var mousedown_time;
 	
